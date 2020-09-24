@@ -2,7 +2,8 @@ package signing
 
 import (
 	sync "sync"
-	"tss-hs/keygen"
+
+	"github.com/michain-org/tss-hs/keygen"
 
 	"github.com/binance-chain/tss-lib/crypto"
 	kg "github.com/binance-chain/tss-lib/eddsa/keygen"

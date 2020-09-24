@@ -1,4 +1,4 @@
-module tss-hs
+module github.com/michain-org/tss-hs
 
 go 1.14
 

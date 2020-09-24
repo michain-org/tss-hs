@@ -2,7 +2,8 @@ package signing
 
 import (
 	"math/big"
-	"tss-hs/common"
+
+	"github.com/michain-org/tss-hs/common"
 
 	"github.com/binance-chain/tss-lib/crypto"
 	"github.com/binance-chain/tss-lib/tss"

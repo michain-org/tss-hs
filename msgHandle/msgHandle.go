@@ -2,7 +2,8 @@ package msgHandle
 
 import (
 	"errors"
-	"tss-hs/signing"
+
+	"github.com/michain-org/tss-hs/signing"
 )
 
 type (

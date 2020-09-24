@@ -1,7 +1,7 @@
 package keygen
 
 import (
-	"tss-hs/common"
+	"github.com/michain-org/tss-hs/common"
 
 	kg "github.com/binance-chain/tss-lib/eddsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
