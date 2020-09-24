@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 	"testing"
-	"tss-hs/keygen"
-	sig "tss-hs/signing"
 
+	"github.com/michain-org/tss-hs/keygen"
+	sig "github.com/michain-org/tss-hs/signing"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -119,7 +119,7 @@ func (v *Vroute) HotRoute(mode int) {
 
 }
 
-func TestMsgHandler(t *testing.T) {
+func TestMsgHandle(t *testing.T) {
 	//keygen locally and store savedata into files
 	svs, err := keygen.Local(threshold, participant)
 	if err != nil {

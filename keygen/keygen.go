@@ -3,20 +3,75 @@ package keygen
 import (
 	"math/big"
 
-	"github.com/binance-chain/tss-lib/common"
+	tssComm "github.com/binance-chain/tss-lib/common"
+	"github.com/decred/dcrd/dcrec/edwards"
+	"github.com/michain-org/tss-hs/common"
+	"github.com/pkg/errors"
+
 	"github.com/binance-chain/tss-lib/crypto"
 	"github.com/binance-chain/tss-lib/crypto/vss"
 	kg "github.com/binance-chain/tss-lib/eddsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
-	"github.com/decred/dcrd/dcrec/edwards"
-	"github.com/pkg/errors"
 )
+
+const (
+	path = "./paramer"
+)
+
+func makeParty(
+	para *Paramer,
+	out chan<- tss.Message,
+	end chan<- kg.LocalPartySaveData,
+) *kg.LocalParty {
+	p2pCtx := tss.NewPeerContext(para.Pids)
+	params := tss.NewParameters(p2pCtx, para.Pids[para.Index], len(para.Pids), para.Threshold)
+	P := kg.NewLocalParty(params, out, end).(*kg.LocalParty)
+	return P
+}
+
+//Decentralized generate savedata in a decentralized way
+func Decentralized(
+	para *Paramer,
+	in <-chan tss.Message,
+	out chan<- tss.Message,
+) (*LocalPartySaveData, error) {
+
+	errCh := make(chan *tss.Error)
+	outCh := make(chan tss.Message)
+	endCh := make(chan kg.LocalPartySaveData)
+	party := makeParty(para, outCh, endCh)
+	go func(P *kg.LocalParty) {
+		if err := P.Start(); err != nil {
+			errCh <- err
+		}
+	}(party)
+
+	for {
+		select {
+		case inmsg := <-in:
+			//TODO erros msg from others,stop keygen
+			go common.MsginHandle(party, inmsg, errCh)
+
+		case msg := <-outCh:
+			out <- msg
+
+		case errMsg := <-errCh:
+			//TODO send error msg
+			return nil, errMsg
+
+		case save := <-endCh:
+			return convert(&save), nil
+		}
+
+	}
+
+}
 
 func makePolynomial(ids []*big.Int, Threshold int) (*kg.LocalPartySaveData, vss.Vs, vss.Shares, error) {
 	partyCount := len(ids)
 	s := kg.NewLocalPartySaveData(partyCount)
 	save := &s
-	ui := common.GetRandomPositiveInt(tss.EC().Params().N)
+	ui := tssComm.GetRandomPositiveInt(tss.EC().Params().N)
 	vs, shares, err := vss.Create(Threshold, ui, ids)
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "create polynomial fail")
@@ -27,7 +82,7 @@ func makePolynomial(ids []*big.Int, Threshold int) (*kg.LocalPartySaveData, vss.
 
 // Local generate partySaveDate Centrally
 // Threshold = Participants - (Participants - 1)/3 -1
-func Local(Threshold int, Participants int) ([]*kg.LocalPartySaveData, error) {
+func Local(Threshold int, Participants int) ([]*LocalPartySaveData, error) {
 	tss.SetCurve(edwards.Edwards())
 	pIDs, err := GenPartyIDs(Participants)
 	if err != nil {
@@ -37,14 +92,14 @@ func Local(Threshold int, Participants int) ([]*kg.LocalPartySaveData, error) {
 	idsLen := len(ids)
 	vc := make(vss.Vs, Threshold+1)
 	Xi := make([]*big.Int, idsLen)
-	allsv := make([]*kg.LocalPartySaveData, idsLen)
+	allsv := make([]*LocalPartySaveData, idsLen)
 
 	for i := 0; i < idsLen; i++ {
 		sv, vs, shares, err := makePolynomial(ids, Threshold)
 		if err != nil {
 			return nil, errors.Wrap(err, "make polynomial fail")
 		}
-		allsv[i] = sv
+		allsv[i] = convert(sv)
 		for j := 0; j < len(shares); j++ {
 			if i == 0 {
 				Xi[j] = shares[j].Share
@@ -68,7 +123,7 @@ func Local(Threshold int, Participants int) ([]*kg.LocalPartySaveData, error) {
 
 	//calc BigXi
 	bigXi := make([]*crypto.ECPoint, idsLen)
-	modQ := common.ModInt(tss.EC().Params().N)
+	modQ := tssComm.ModInt(tss.EC().Params().N)
 
 	for idx, id := range ids {
 		bigX, _ := crypto.NewECPoint(tss.EC(), vc[0].X(), vc[0].Y())
@@ -93,4 +148,14 @@ func Local(Threshold int, Participants int) ([]*kg.LocalPartySaveData, error) {
 	}
 
 	return allsv, nil
+}
+
+func convert(sv *kg.LocalPartySaveData) *LocalPartySaveData {
+	svLocal := new(LocalPartySaveData)
+	svLocal.Xi = sv.Xi
+	svLocal.ShareID = sv.ShareID
+	svLocal.Ks = sv.Ks
+	svLocal.BigXj = sv.BigXj
+	svLocal.EDDSAPub = sv.EDDSAPub
+	return svLocal
 }

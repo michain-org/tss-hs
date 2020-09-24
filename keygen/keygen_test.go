@@ -5,7 +5,6 @@ import (
 	"sync"
 	"testing"
 
-	kg "github.com/binance-chain/tss-lib/eddsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,9 +49,9 @@ func TestPidStorage(t *testing.T) {
 	fmt.Println(pid)
 }
 
-func TestDecentralized(t *testing.T) {
+func TestDecentralized2(t *testing.T) {
 	type testSvs struct {
-		Svs []*kg.LocalPartySaveData
+		Svs []*LocalPartySaveData
 		Mtx sync.Mutex
 	}
 	saves := new(testSvs)
@@ -68,7 +67,7 @@ func TestDecentralized(t *testing.T) {
 		allsds[i] = make(chan tss.Message, TestParticipants)
 	}
 	allrecvs := make(chan tss.Message, TestParticipants)
-	allsvs := make(chan kg.LocalPartySaveData, TestParticipants)
+	allsvs := make(chan LocalPartySaveData, TestParticipants)
 	for i := 0; i < TestParticipants; i++ {
 		go func(para *Paramer,
 			in <-chan tss.Message,

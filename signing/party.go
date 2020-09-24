@@ -6,7 +6,7 @@ import (
 	"github.com/michain-org/tss-hs/keygen"
 
 	"github.com/binance-chain/tss-lib/crypto"
-	kg "github.com/binance-chain/tss-lib/eddsa/keygen"
+	kg "github.com/michain-org/tss-hs/keygen"
 	"github.com/pkg/errors"
 )
 

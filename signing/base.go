@@ -7,9 +7,9 @@ import (
 	"github.com/binance-chain/edwards25519/edwards25519"
 	"github.com/binance-chain/tss-lib/common"
 	"github.com/binance-chain/tss-lib/crypto"
-	kg "github.com/binance-chain/tss-lib/eddsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/decred/dcrd/dcrec/edwards"
+	kg "github.com/michain-org/tss-hs/keygen"
 	"github.com/pkg/errors"
 )
 

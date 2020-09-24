@@ -3,17 +3,40 @@ package keygen
 import (
 	"encoding/json"
 	"io/ioutil"
+	"math/big"
 	"os"
 
 	"github.com/binance-chain/tss-lib/crypto"
 	"github.com/binance-chain/tss-lib/crypto/vss"
-	kg "github.com/binance-chain/tss-lib/eddsa/keygen"
 	"github.com/binance-chain/tss-lib/tss"
 	"github.com/pkg/errors"
 )
 
+type (
+	LocalSecrets struct {
+		// secret fields (not shared, but stored locally)
+		Xi, ShareID *big.Int // xi, kj
+	}
+
+	// Everything in LocalPartySaveData is saved locally to user's HD when done
+	LocalPartySaveData struct {
+		LocalSecrets
+
+		// original indexes (ki in signing preparation phase)
+		Ks []*big.Int
+
+		// public keys (Xj = uj*G for each Pj)
+		BigXj []*crypto.ECPoint // Xj
+
+		// used for test assertions (may be discarded)
+		EDDSAPub *crypto.ECPoint // y
+	}
+)
+
+
+
 //StorageSavedata save a savedata which is used for signing after keygen into file
-func StorageSavedata(sv *kg.LocalPartySaveData, path string) error {
+func StorageSavedata(sv *LocalPartySaveData, path string) error {
 	perm := os.FileMode(0600)
 	b, err := json.Marshal(sv)
 	if err != nil {
@@ -26,12 +49,12 @@ func StorageSavedata(sv *kg.LocalPartySaveData, path string) error {
 }
 
 //LoadSavedata load a savedata from file
-func LoadSavedata(path string) (*kg.LocalPartySaveData, error) {
+func LoadSavedata(path string) (*LocalPartySaveData, error) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	var sv kg.LocalPartySaveData
+	var sv LocalPartySaveData
 	if err := json.Unmarshal(b, &sv); err != nil {
 		return nil, err
 	}
@@ -39,7 +62,7 @@ func LoadSavedata(path string) (*kg.LocalPartySaveData, error) {
 }
 
 //CheckSaves check for errors of savedate
-func CheckSaves(svs []*kg.LocalPartySaveData, threshold int) (bool, error) {
+func CheckSaves(svs []*LocalPartySaveData, threshold int) (bool, error) {
 	if threshold > len(svs) {
 		return false, errors.New("number of threshold should less than savedates")
 	}
