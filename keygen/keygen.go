@@ -67,19 +67,6 @@ func Decentralized(
 
 }
 
-func makePolynomial(ids []*big.Int, Threshold int) (*kg.LocalPartySaveData, vss.Vs, vss.Shares, error) {
-	partyCount := len(ids)
-	s := kg.NewLocalPartySaveData(partyCount)
-	save := &s
-	ui := tssComm.GetRandomPositiveInt(tss.EC().Params().N)
-	vs, shares, err := vss.Create(Threshold, ui, ids)
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "create polynomial fail")
-	}
-	return save, vs, shares, nil
-
-}
-
 // Local generate partySaveDate Centrally
 // Threshold = Participants - (Participants - 1)/3 -1
 func Local(Threshold int, Participants int) ([]*LocalPartySaveData, error) {
@@ -99,7 +86,7 @@ func Local(Threshold int, Participants int) ([]*LocalPartySaveData, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "make polynomial fail")
 		}
-		allsv[i] = convert(sv)
+		allsv[i] = sv
 		for j := 0; j < len(shares); j++ {
 			if i == 0 {
 				Xi[j] = shares[j].Share
